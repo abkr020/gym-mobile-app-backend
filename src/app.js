@@ -1,14 +1,18 @@
 import express from "express";
 import cors from "cors";
 // import { connectDB } from "./db/db.js";
+import { connectNeonDB } from "./db/neonPostgresDB.js";
 // import authRoutes from "./routes/auth.routes.js";
 // import paymentRoutes from "./routes/payment.routes.js";
 // import productRoutes from "./routes/product.routes.js";
 // import addressRoutes from "./routes/address.routes.js";
 // import orderRoutes from "./routes/order.routes.js";
+import dailyRecordsRoutes from "./routes/daily-records.routes.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import { verifyToken } from "./middlewares/auth.middleware.js";
 
 const LOG_DIR = path.join(process.cwd(), "logs");
 const LOG_FILE = path.join(LOG_DIR, "requests.log");
@@ -22,9 +26,11 @@ app.set("trust proxy", true);
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
 
 // Connect DB
 // connectDB();
+connectNeonDB();
 
 // Allow requests from frontend
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -63,6 +69,8 @@ app.use(
 // ✅ Handle CORS preflight requests
 // app.options("/*", cors());
 
+// Global middleware for token verification on all /api endpoints
+app.use("/api", verifyToken);
 
 // Routes
 // app.use("/api/auth", authRoutes);
@@ -70,6 +78,7 @@ app.use(
 // app.use("/api/products", productRoutes);
 // app.use("/api/address", addressRoutes);
 // app.use("/api/orders", orderRoutes);
+app.use("/api/daily-records", dailyRecordsRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running ✅");
