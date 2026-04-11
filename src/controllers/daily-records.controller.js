@@ -33,3 +33,37 @@ export const addDailyRecord = async (req, res) => {
         });
     }
 };
+
+export const getTodayRecord = async (req, res) => {
+    try {
+        console.log("--getTodayRecord--");
+        
+        const userId = req.user?.id || req.user?._id || req.user?.userId;
+        
+        if (!userId) {
+            return res.status(400).json({ message: "User ID not found in token" });
+        }
+        
+        const selectSql = `
+        SELECT * FROM daily_records
+        WHERE "userId" = $1 AND DATE("createdAt") = CURRENT_DATE
+        ORDER BY "createdAt" DESC
+        LIMIT 1
+        `;
+        
+        const { rows } = await neonQuery(selectSql, [userId]);
+        const todayRecord = rows[0] || null;
+        
+        console.log("--todayRecord--",todayRecord);
+        return res.status(200).json({
+            message: "Today's record retrieved successfully",
+            data: todayRecord,
+        });
+    } catch (error) {
+        console.error("Error getting today's record:", error);
+        res.status(500).json({
+            message: "Failed to get today's record",
+            error: error.message,
+        });
+    }
+};
