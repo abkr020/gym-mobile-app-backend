@@ -1,5 +1,5 @@
 import express from "express";
-import { addDailyRecord, getTodayRecord, updateDailyRecord } from "../controllers/daily-records.controller.js";
+import { addDailyRecord, getTodayRecord, updateDailyRecord ,getDailyRecordsHistory} from "../controllers/daily-records.controller.js";
 
 const router = express.Router();
 
@@ -11,5 +11,7 @@ router.get("/today", getTodayRecord);
 
 // PUT /api/daily-records/:id
 router.put("/:id", updateDailyRecord);
+
+router.get("/all", getDailyRecordsHistory);
 
 export default router;

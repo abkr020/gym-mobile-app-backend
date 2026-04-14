@@ -167,3 +167,74 @@ export const updateDailyRecord = async (req, res) => {
         });
     }
 };
+export const getDailyRecordsHistory = async (req, res) => {
+    try {
+        console.log("--getDailyRecordsHistory--");
+
+        const userId = req.user?.id || req.user?._id || req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: user not found",
+            });
+        }
+
+        const days = parseInt(req.query.days) || 7; // default 7 days
+
+        const sql = `
+            SELECT id, "pushups", "pullups", "createdAt"
+            FROM daily_records
+            WHERE "userId" = $1
+              AND "createdAt" >= NOW() - INTERVAL '${days} days'
+            ORDER BY "createdAt" DESC
+        `;
+
+        const { rows } = await neonQuery(sql, [userId]);
+        console.log("rows", rows);
+
+        return res.status(200).json({
+            success: true,
+            message: "History fetched successfully",
+            data: rows,
+            meta: {
+                days,
+                count: rows.length,
+            },
+        });
+
+    } catch (error) {
+        console.error("Error fetching history:", error);
+
+        // 🔐 Auth-related issue (just in case middleware fails)
+
+        // 🗄️ Postgres errors
+        if (error.code === "22P02") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid query parameter",
+            });
+        }
+
+        if (error.code === "57014") {
+            return res.status(503).json({
+                success: false,
+                message: "Database timeout. Please try again.",
+            });
+        }
+
+        // ⚠️ Known custom errors (optional pattern)
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                success: false,
+                message: error.message,
+            });
+        }
+
+        // ❌ Fallback (safe for production)
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong. Please try again later.",
+        });
+    }
+};
